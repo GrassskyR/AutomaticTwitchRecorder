@@ -13,10 +13,11 @@ import yt_dlp
 class AutomaticTwitchRecorder:
     """ATR monitors a Twitch channel and downloads the stream
     """
-    def __init__(self, channel, output_dir, check_rate):
+    def __init__(self, channel, output_dir, check_rate, proxy):
         self.channel = channel
         self.output_dir = os.path.join(output_dir, '')
         self.check_rate = check_rate
+        self.proxy = proxy
 
     def check_if_online(self):
         """Checks if channel is currently streaming
@@ -24,8 +25,17 @@ class AutomaticTwitchRecorder:
         Returns:
             [bool]: [1 if streaming, 0 else]
         """
-        ydl = yt_dlp.YoutubeDL()
+        
+        ydl_opts = {
+                    'proxy':self.proxy,
+                }
+        '''
+            Added proxy for personal use
+            shitcode i am so sorry :(
+        '''
+        ydl = yt_dlp.YoutubeDL(ydl_opts)
         try:
+            
             _ = ydl.extract_info(f"http://www.twitch.tv/{self.channel}", download=False)
             return 1
         except (yt_dlp.utils.ExtractorError, yt_dlp.utils.DownloadError) as _:
@@ -46,6 +56,7 @@ class AutomaticTwitchRecorder:
                     'outtmpl': f'{self.output_dir}%(title)s'+'.mp4',
                     'noplaylist': True,
                     'extract-audio': True,
+                    'proxy':self.proxy,
                 }
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([f"http://www.twitch.tv/{self.channel}"])
@@ -58,7 +69,7 @@ def main(args):
     Args:
         args ([args]): [CLI Arguments]
     """
-    atr = AutomaticTwitchRecorder(args.channel, args.output, args.check_rate)
+    atr = AutomaticTwitchRecorder(args.channel, args.output, args.check_rate, args.proxy)
     atr.start_loop()
 
 if __name__ == "__main__":
@@ -69,6 +80,8 @@ if __name__ == "__main__":
         directory, if blank current directory will be set")
     parser.add_argument("--check-rate", type=int, default=45, help="Specify how often you want to \
         check if specified channel is streaming. Standard: 45 secs")
+    parser.add_argument("--proxy", type=str , default="", help="For specific regions to bypass the \
+        firewall")
 
     args = parser.parse_args()
 
